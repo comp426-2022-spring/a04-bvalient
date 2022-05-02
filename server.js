@@ -11,46 +11,47 @@ const args = require('minimist')(process.argv.slice(2), {
         log: false,
     }
 }) 
-
-args['port', 'log', 'debug', 'help']
-
-const help = `server.js [options]
-        --port	Set the port number for the server to listen on. Must be an integer between 1 and 65535.
-        --debug	If set to \`true\`, creates endpoints /app/log/access/ which returns
-                    a JSON access log from the database and /app/error which throws 
-                    an error with the message \"Error test successful.\" Defaults to 
-                    \`false\`.
-        --log		If set to false, no log files are written. Defaults to true.
-                    Logs are always written to database.
-        --help	Return this message and exit.`;
-
-if(args.help||args.h){
-    console.log(help);
-    process.exit(0);
-}
+args['port', 'log', 'debug']
 
 console.log(args)
+
+if (args.help) {
+    console.log(
+        "server.js [options] \n" + 
+        "\n" +
+        "\t --port \t Set the port number for the server to listen on. must be an integer between 1 and 65535.\n" +
+        "\t --debug \t If set to `true`, creates endpoints /app/log/access/ which returns a JSON access log from the database and /app/error/ which throws an error with the message " +
+            "\"Error test successful.\" " + "Defaults to `false`. \n" +
+        "\t --log \t If set to false, no log files are written. Defaults to 'true'. Logs are always written to database. \n" +
+        "\t --help \t Return this message and exit."
+    )
+    exit(0);
+}
 
 const database = require('./database')
 
 app.use(express.urlencoded({extended: true}))
 app.use(express.json())
 
-//server
+// Start an app server
+
 const port = args.port || 5555
 
 const server = app.listen(port, () => {
     console.log('App listening on port %PORT%'.replace('%PORT%', port))
 });
 
+
 app.get('/app/', (req, res) => {
+    // Respond with status 200
         res.statusCode = 200;
+    // Respind with status message 'OK'
         res.statusMessage = "OK";
-        res.writeHead( res.statusCode, { 'Content-Type' : 'text/plain' });
+        res.writeHead( res.statusCode, { 'Content-Type' : 'text/plain '});
         res.end(res.statusCode + ' ' + res.statusMessage);
 });
 
-//middle
+// Middleware function
 app.use( (req, res, next) => {
     let logdata = {
         remoteaddr: req.ip,
@@ -64,12 +65,14 @@ app.use( (req, res, next) => {
         referer: req.headers['referer'],
         useragent: req.headers['user-agent']
     }
+
     const stmt = database.prepare(`INSERT INTO accesslog (remoteaddr, remoteuser, time, method, url, protocol, httpversion, status, referer, useragent) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
     stmt.run(logdata.remoteaddr, logdata.remoteuser, logdata.time, logdata.method, logdata.url, logdata.protocol, logdata.httpversion, logdata.status, logdata.referer, logdata.useragent)
+
     next();
 })
 
-if (args.debug) {
+if (args.debug == true) {
     app.get('/app/log/access', (req, res) => {
         const select = database.prepare('SELECT * FROM accesslog').all();
         res.status(200).json(select);
@@ -80,14 +83,13 @@ if (args.debug) {
     })
 }
 
-if (args.log) {
+if (args.log == true) {
     const WRITESTREAM = fs.createWriteStream('FILE', { flags: 'a' });
     app.use(morgan('FORMAT', { stream: WRITESTREAM }));
 }
 
+// Default response for any other request 
 
 app.use(function(req, res) {
   res.status(404).send('404 NOT FOUND')
 });
-
-//helped from classmates
