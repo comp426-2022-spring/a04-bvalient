@@ -43,6 +43,19 @@ app.get('/app/', (req, res)=>{
     res.end(res.statusCode+ ' ' +res.statusMessage)
 });
 
+app.get('/app/log/access', (req, res)=>{
+    res.statusCode = 200;
+    res.statusMessage = "OK"
+    res.writeHead(res.statusCode, {'Content-Type' : 'text/plain'});
+    res.end(res.statusCode+ ' ' +res.statusMessage)
+});
+
+app.get('/app/error', (req, res)=>{
+    res.statusCode = 200;
+    res.statusMessage = "OK"
+    res.writeHead(res.statusCode, {'Content-Type' : 'text/plain'});
+    res.end(res.statusCode+ ' ' +res.statusMessage)
+});
 
 
 app.use(function(req, res){
