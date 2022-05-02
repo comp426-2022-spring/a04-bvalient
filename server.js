@@ -83,6 +83,11 @@ if (args.debug) {
     });
 }
 
+if (args.log) {
+    const WRITESTREAM = fs.createWriteStream('FILE', { flags: 'a' });
+    app.use(morgan('FORMAT', { stream: WRITESTREAM }));
+}
+
 
 app.use(function(req, res){
     res.status(404).send("404 NOT fOUND")
