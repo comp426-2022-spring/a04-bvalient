@@ -6,8 +6,8 @@ const app = express()
 
 const args = require('minimist')(process.argv.slice(2))
 
-console.log(args)
 args['port', 'help', 'debug', 'log'];
+console.log(args)
 
 const help = (`
     server.js [options]
@@ -31,12 +31,16 @@ const help = (`
         process.exit(0)
     }
 
+const database = require('./database')
+
+app.use(express.urlencoded({extended: true}))
+app.use(express.json())
+
 const port = args.port || 5000
 
 const server = app.listen(port, () =>{
     console.log('App is running on port %PORT%'.replace('%PORT%', port))
 });
-
 
 
 app.get('/app/', (req, res)=>{
