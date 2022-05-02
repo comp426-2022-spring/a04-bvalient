@@ -1,11 +1,14 @@
+const { exit } = require('process')
+const morgan = require('morgan')
+const fs = require('fs')
 const express = require('express')
 const app = express()
-
 
 const args = require('minimist')(process.argv.slice(2))
 
 console.log(args)
-args["port"]
+args['port', 'help', 'debug', 'log'];
+
 const help = (`
     server.js [options]
 
@@ -43,19 +46,38 @@ app.get('/app/', (req, res)=>{
     res.end(res.statusCode+ ' ' +res.statusMessage)
 });
 
-app.get('/app/log/access', (req, res)=>{
-    res.statusCode = 200;
-    res.statusMessage = "OK"
-    res.writeHead(res.statusCode, {'Content-Type' : 'text/plain'});
-    res.end(res.statusCode+ ' ' +res.statusMessage)
-});
+app.use((req, res, next) => {
+    let logData = {
+        remoteaddr: req.ip,
+        remoteuser: req.user,
+        time: Date.now(),
+        method: req.method,
+        url: req.url,
+        protocol: req.protocol,
+        httpversion: req.httpVersion,
+        status: res.statusCode,
+        referer: req.headers['referer'],
+        useragent: req.headers['user-agent']
+    }
+    const stmt = db.prepare('INSERT INTO accesslog (remoteaddr, remoteuser, time, method, url, protocol, httpversion, status, referer, useragent) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    stmt.run(logData.remoteaddr, logData.remoteuser, logData.time, logData.method, logData.url, logData.protocol, logData.httpversion, logData.status, logData.referer, logData.useragent);
+    next();
+}) 
 
-app.get('/app/error', (req, res)=>{
-    res.statusCode = 200;
-    res.statusMessage = "OK"
-    res.writeHead(res.statusCode, {'Content-Type' : 'text/plain'});
-    res.end(res.statusCode+ ' ' +res.statusMessage)
-});
+if (args.debug) {
+    app.get("/app/log/access", (req, res) => {
+        try{
+            const logData = db.prepare('SELECT * FROM accesslog').all();
+            res.status(200).json(logData);
+        } catch(e){
+            console.error(e);
+        }
+    })
+
+    app.get("/app/error", (req, res) => {
+        throw new Error('Error Test Successful');
+    });
+}
 
 
 app.use(function(req, res){
